@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>内二科急救药品一览表</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f0f4f8;
+            padding: 20px;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 20px 24px 32px;
+        }
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+        }
+        .sub {
+            color: #475569;
+            margin-bottom: 24px;
+            border-left: 4px solid #3b82f6;
+            padding-left: 16px;
+            font-size: 0.95rem;
+        }
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 12px 24px;
+            flex: 1 1 150px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.2;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: #475569;
+            letter-spacing: 0.5px;
+        }
+        .stat-card.warning .stat-number { color: #e67e22; }
+        .stat-card.danger .stat-number { color: #e53e3e; }
+        .stat-card.high-risk .stat-number { color: #c0392b; }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
+            align-items: flex-end;
+            background: #f9f9ff;
+            padding: 16px;
+            border-radius: 28px;
+        }
+        .search-box {
+            flex: 2;
+            min-width: 200px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: 0.2s;
+        }
+        .search-box input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 130px;
+        }
+        .filter-group label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #334155;
+            text-transform: uppercase;
+        }
+        select, .reset-btn {
+            padding: 8px 16px;
+            border-radius: 40px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .reset-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .reset-btn:hover {
+            background: #2563eb;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            background: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 800px;
+        }
+        th {
+            background: #f1f5f9;
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #0f172a;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        th:hover {
+            background: #e6edf5;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ecf3fa;
+            vertical-align: middle;
+        }
+        tr:hover td {
+            background-color: #fefce8;
+        }
+        .high-risk-badge {
+            background: #fee2e2;
+            color: #b91c1c;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            display: inline-block;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .status-valid { background: #d1fae5; color: #065f46; }
+        .status-near { background: #fed7aa; color: #9b2c1d; }
+        .status-expired { background: #fecaca; color: #991b1b; font-weight: bold; }
+        .status-perpetual { background: #e2e3e8; color: #2c3e50; }
+        .shortage {
+            background-color: #fff0db;
+            font-weight: bold;
+            color: #c2410c;
+        }
+        .shortage-badge {
+            background: #ffedd5;
+            color: #9a3412;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .footer {
+            margin-top: 24px;
+            font-size: 0.75rem;
+            text-align: center;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+        }
+        .sort-icon {
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+        @media (max-width: 640px) {
+            body { padding: 10px; }
+            .container { padding: 16px; }
+            .stat-card { padding: 8px 12px; }
+            .stat-number { font-size: 1.5rem; }
+            .controls { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🚑 内二科急救车药品一览表</h1>
+    <div class="sub">急救物品 · 高危管控 · 效期预警 · 基数管理</div>
+
+    <div class="stats">
+        <div class="stat-card"><div class="stat-number">64</div><div class="stat-label">总品种数</div></div>
+        <div class="stat-card high-risk"><div class="stat-number">7</div><div class="stat-label">高危物品</div></div>
+        <div class="stat-card warning"><div class="stat-number">7</div><div class="stat-label">近效期(≤6月)</div></div>
+        <div class="stat-card danger"><div class="stat-number">0</div><div class="stat-label">已过期</div></div>
+        <div class="stat-card"><div class="stat-number">0</div><div class="stat-label">数量短缺</div></div>
+    </div>
+
+    <div class="controls">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 搜索药品名、规格、备注..." autocomplete="off">
+        </div>
+        <div class="filter-group">
+            <label>⚠️ 高危筛选</label>
+            <select id="highRiskFilter">
+                <option value="">全部</option>
+                <option value="high">高危物品</option>
+                <option value="normal">非高危</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>📅 效期状态</label>
+            <select id="statusFilter">
+                <option value="">全部</option>
+                <option value="valid">正常有效</option>
+                <option value="near">近效期 (≤6个月)</option>
+                <option value="expired">已过期</option>
+                <option value="perpetual">长期有效</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>📦 数量状态</label>
+            <select id="shortageFilter">
+                <option value="">全部</option>
+                <option value="shortage">短缺 (数量＜基数)</option>
+                <option value="sufficient">充足</option>
+            </select>
+        </div>
+        <button class="reset-btn" id="resetBtn">重置筛选</button>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="medicineTable">
+            <thead id="tableHeader">
+                <!-- 表头由JS动态生成，支持排序 -->
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="10" style="text-align:center;">加载数据中...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="footer">
+        数据最后更新：2026-03-29 15:46:32 | 有效期基于系统日期判断，请定期核查实物
+    </div>
+</div>
+
+<script>
+    const medicines = [
+  {
+    "id": "1",
+    "name": "尼可刹米注射液",
+    "base": 3,
+    "high_risk": "",
+    "spec": "1.5ml:0.375g",
+    "expiry_display": "2027-02-20",
+    "expiry_date": "2027-02-20",
+    "quantity": 3,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "2",
+    "name": "盐酸肾上腺素注射液",
+    "base": 13,
+    "high_risk": "是",
+    "spec": "1mL:1mg",
+    "expiry_display": "2026-10-01",
+    "expiry_date": "2026-10-01",
+    "quantity": 13,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "3",
+    "name": "重酒石酸去甲肾上腺素注射液",
+    "base": 3,
+    "high_risk": "是",
+    "spec": "1mL:2mg",
+    "expiry_display": "2026-08-01",
+    "expiry_date": "2026-08-01",
+    "quantity": 3,
+    "remark": "",
+    "shortage": false,
+    "status": "near"
+  },
+  {
+    "id": "4",
+    "name": "盐酸多巴胺注射液",
+    "base": 5,
+    "high_risk": "是",
+    "spec": "2.5mL:50mg",
+    "expiry_display": "2026-11-01",
+    "expiry_date": "2026-11-01",
+    "quantity": 5,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "5",
+    "name": "去乙酰毛花苷注射液",
+    "base": 3,
+    "high_risk": "是",
+    "spec": "2mL:0.4mg",
+    "expiry_display": "2027-01-03",
+    "expiry_date": "2027-01-03",
+    "quantity": 3,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "6",
+    "name": "呋塞米注射液",
+    "base": 3,
+    "high_risk": "",
+    "spec": "2mL:20mg",
+    "expiry_display": "2027-01-01",
+    "expiry_date": "2027-01-01",
+    "quantity": 3,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "7",
+    "name": "地塞米松磷酸钠注射液",
+    "base": 3,
+    "high_risk": "",
+    "spec": "1mL:5mg",
+    "expiry_display": "2027-01-01",
+    "expiry_date": "2027-01-01",
+    "quantity": 3,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "8",
+    "name": "盐酸胺碘酮注射液",
+    "base": 3,
+    "high_risk": "是",
+    "spec": "3mL:150mg",
+    "expiry_display": "2027-09-01",
+    "expiry_date": "2027-09-01",
+    "quantity": 3,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "9",
+    "name": "盐酸异丙嗪注射液",
+    "base": 3,
+    "high_risk": "",
+    "spec": "2mL:50mg",
+    "expiry_display": "2027-09-08",
+    "expiry_date": "2027-09-08",
+    "quantity": 3,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "10",
+    "name": "硫酸阿托品注射液",
+    "base": 3,
+    "high_risk": "",
+    "spec": "1ml:0.5mg",
+    "expiry_display": "2027-08-01",
+    "expiry_date": "2027-08-01",
+    "quantity": 3,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "11",
+    "name": "卷胶布",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "无限期",
+    "expiry_date": null,
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "perpetual"
+  },
+  {
+    "id": "12",
+    "name": "无菌注射器30ml",
+    "base": 2,
+    "high_risk": "",
+    "spec": "30ml",
+    "expiry_display": "2028-07-28",
+    "expiry_date": "2028-07-28",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "13",
+    "name": "一次性使用静脉留置针",
+    "base": 4,
+    "high_risk": "",
+    "spec": "20G",
+    "expiry_display": "2028-10-01",
+    "expiry_date": "2028-10-01",
+    "quantity": 4,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "14",
+    "name": "复合碘",
+    "base": 1,
+    "high_risk": "",
+    "spec": "60ml",
+    "expiry_display": "2027-03-04",
+    "expiry_date": "2027-03-04",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "15",
+    "name": "止血带",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "无限期",
+    "expiry_date": null,
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "perpetual"
+  },
+  {
+    "id": "16",
+    "name": "无菌注射器10ml",
+    "base": 2,
+    "high_risk": "",
+    "spec": "10ml",
+    "expiry_display": "2028-05-28",
+    "expiry_date": "2028-05-28",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "17",
+    "name": "一次性使用口咽通气道",
+    "base": 2,
+    "high_risk": "",
+    "spec": "9cm",
+    "expiry_display": "2026-08-29",
+    "expiry_date": "2026-08-29",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "near"
+  },
+  {
+    "id": "18",
+    "name": "砂轮",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "无限期",
+    "expiry_date": null,
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "perpetual"
+  },
+  {
+    "id": "19",
+    "name": "一次性使用医用透明贴膜",
+    "base": 2,
+    "high_risk": "",
+    "spec": "60mm*70mm",
+    "expiry_display": "2027-07-01",
+    "expiry_date": "2027-07-01",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "20",
+    "name": "医用棉签",
+    "base": 2,
+    "high_risk": "",
+    "spec": "12cm",
+    "expiry_display": "2028-04-01",
+    "expiry_date": "2028-04-01",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "21",
+    "name": "5%碳酸氢钠注射液",
+    "base": 1,
+    "high_risk": "",
+    "spec": "250ml:12.5g",
+    "expiry_display": "2026-10-01",
+    "expiry_date": "2026-10-01",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "22",
+    "name": "5%葡萄糖氯化钠注射液",
+    "base": 1,
+    "high_risk": "",
+    "spec": "250ml",
+    "expiry_display": "2027-03-01",
+    "expiry_date": "2027-03-01",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "23",
+    "name": "20%甘露醇注射液",
+    "base": 1,
+    "high_risk": "",
+    "spec": "250ml",
+    "expiry_display": "2029-02-01",
+    "expiry_date": "2029-02-01",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "24",
+    "name": "0.9%氯化钠注射液",
+    "base": 1,
+    "high_risk": "",
+    "spec": "250ml",
+    "expiry_display": "2028-06-01",
+    "expiry_date": "2028-06-01",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "25",
+    "name": "5%葡萄糖注射液",
+    "base": 1,
+    "high_risk": "",
+    "spec": "250ml",
+    "expiry_display": "2027-02-23",
+    "expiry_date": "2027-02-23",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "26",
+    "name": "复方氯化钠注射液",
+    "base": 1,
+    "high_risk": "",
+    "spec": "500ml",
+    "expiry_display": "2029-08-01",
+    "expiry_date": "2029-08-01",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "27",
+    "name": "开口器",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2026-08-29",
+    "expiry_date": "2026-08-29",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "near"
+  },
+  {
+    "id": "28",
+    "name": "舌钳",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2026-08-29",
+    "expiry_date": "2026-08-29",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "near"
+  },
+  {
+    "id": "29",
+    "name": "压舌板",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2026-08-29",
+    "expiry_date": "2026-08-29",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "near"
+  },
+  {
+    "id": "30",
+    "name": "一次性吸氧面罩",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2028-02-24",
+    "expiry_date": "2028-02-24",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "31",
+    "name": "听诊器",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "无限期",
+    "expiry_date": null,
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "perpetual"
+  },
+  {
+    "id": "32",
+    "name": "呼吸球囊",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "无限期",
+    "expiry_date": null,
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "perpetual"
+  },
+  {
+    "id": "33",
+    "name": "苯巴比妥",
+    "base": 3,
+    "high_risk": "是",
+    "spec": "",
+    "expiry_display": "2026-10-22",
+    "expiry_date": "2026-10-22",
+    "quantity": 3,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "34",
+    "name": "无菌注射器1ml",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2028-04-28",
+    "expiry_date": "2028-04-28",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "35",
+    "name": "无菌注射器50ml",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2028-05-28",
+    "expiry_date": "2028-05-28",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "36",
+    "name": "地西泮",
+    "base": 3,
+    "high_risk": "B级",
+    "spec": "",
+    "expiry_display": "2026-12-17",
+    "expiry_date": "2026-12-17",
+    "quantity": 3,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "37",
+    "name": "75%乙醇",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-04-01",
+    "expiry_date": "2027-04-01",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "38",
+    "name": "医用输液贴",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-02-18",
+    "expiry_date": "2027-02-18",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "39",
+    "name": "一次性输液器",
+    "base": 3,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2028-07-28",
+    "expiry_date": "2028-07-28",
+    "quantity": 3,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "40",
+    "name": "一次性输血器",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2026-08-10",
+    "expiry_date": "2026-08-10",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "near"
+  },
+  {
+    "id": "41",
+    "name": "微量泵延长管",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-12-10",
+    "expiry_date": "2027-12-10",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "42",
+    "name": "一次性使用三通阀",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-02-15",
+    "expiry_date": "2027-02-15",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "43",
+    "name": "一次性无菌输液接头",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2028-09-01",
+    "expiry_date": "2028-09-01",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "44",
+    "name": "一次性使用静脉输液针（0.55）",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-08-05",
+    "expiry_date": "2027-08-05",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "45",
+    "name": "一次性使用静脉输液针（0.7）",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-03-08",
+    "expiry_date": "2027-03-08",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "46",
+    "name": "动脉采血器套件",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-10-10",
+    "expiry_date": "2027-10-10",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "47",
+    "name": "一次性静脉采血试管（黄色）",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2028-01-15",
+    "expiry_date": "2028-01-15",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "48",
+    "name": "一次性静脉采血试管（蓝色）",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2028-01-19",
+    "expiry_date": "2028-01-19",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "49",
+    "name": "一次性血气采血试管（绿色）",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2026-12-27",
+    "expiry_date": "2026-12-27",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "50",
+    "name": "一次性静脉采血试管（紫色）",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-12-05",
+    "expiry_date": "2027-12-05",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "51",
+    "name": "一次性采血试管（黑色）",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2026-10-17",
+    "expiry_date": "2026-10-17",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "52",
+    "name": "一次性静脉采血针",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-07-06",
+    "expiry_date": "2027-07-06",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "53",
+    "name": "无菌注射器5ml",
+    "base": 4,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2028-06-28",
+    "expiry_date": "2028-06-28",
+    "quantity": 4,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "54",
+    "name": "一次性鼻氧管",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-07-15",
+    "expiry_date": "2027-07-15",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "55",
+    "name": "湿化瓶",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2026-04-30",
+    "expiry_date": "2026-04-30",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "near"
+  },
+  {
+    "id": "56",
+    "name": "备皮刀",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-05-01",
+    "expiry_date": "2027-05-01",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "57",
+    "name": "一次性吸痰包",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-08-06",
+    "expiry_date": "2027-08-06",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "58",
+    "name": "生理氯化钠溶液",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2026-12-01",
+    "expiry_date": "2026-12-01",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "59",
+    "name": "一次性灭菌橡胶外科手套",
+    "base": 2,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-11-01",
+    "expiry_date": "2027-11-01",
+    "quantity": 2,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "60",
+    "name": "5%葡萄糖注射液500ml",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2029-02-23",
+    "expiry_date": "2029-02-23",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "61",
+    "name": "5%葡萄糖注射液100ml",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2028-02-01",
+    "expiry_date": "2028-02-01",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "62",
+    "name": "0.9%氯化钠注射液500ml",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2027-07-01",
+    "expiry_date": "2027-07-01",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "63",
+    "name": "0.9%氯化钠注射液100ml",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "2028-06-01",
+    "expiry_date": "2028-06-01",
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "valid"
+  },
+  {
+    "id": "64",
+    "name": "氧枕",
+    "base": 1,
+    "high_risk": "",
+    "spec": "",
+    "expiry_display": "无限期",
+    "expiry_date": null,
+    "quantity": 1,
+    "remark": "",
+    "shortage": false,
+    "status": "perpetual"
+  }
+];
+
+    // 列定义
+    const columns = [
+        { key: "id", label: "编号", sortable: true },
+        { key: "name", label: "药品/物品名称", sortable: true },
+        { key: "base", label: "基数", sortable: true },
+        { key: "high_risk", label: "高危物品", sortable: false, render: (v) => {
+            if(v && v !== "" && v !== "否") return `<span class="high-risk-badge">⚠️ ${v}</span>`;
+            return "—";
+        } },
+        { key: "spec", label: "规格", sortable: false },
+        { key: "expiry_display", label: "有效期", sortable: true },
+        { key: "quantity", label: "数量", sortable: true, render: (v, item) => {
+            let shortageHtml = item.shortage ? `<span class="shortage-badge">短缺</span>` : "";
+            return `<span>${v}</span> ${shortageHtml}`;
+        } },
+        { key: "remark", label: "备注", sortable: false },
+        { key: "status", label: "效期状态", sortable: true, render: (v) => {
+            const map = {
+                "valid": "✅ 正常有效",
+                "near": "⚠️ 近效期",
+                "expired": "❌ 已过期",
+                "perpetual": "♾️ 长期有效"
+            };
+            let cls = "";
+            if(v==="valid") cls="status-valid";
+            else if(v==="near") cls="status-near";
+            else if(v==="expired") cls="status-expired";
+            else cls="status-perpetual";
+            return `<span class="status-badge ${cls}">${map[v] || v}</span>`;
+        } }
+    ];
+
+    let currentData = [...medicines];
+    let sortColumn = "id";
+    let sortAsc = true;
+
+    function renderTable() {
+        const tbody = document.getElementById("tableBody");
+        tbody.innerHTML = "";
+        if(currentData.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='9' style='text-align:center; padding:40px;'>📭 没有找到匹配的药品</td></tr>";
+            return;
+        }
+        currentData.forEach(item => {
+            const row = document.createElement("tr");
+            if(item.shortage) row.classList.add("shortage");
+            columns.forEach(col => {
+                const td = document.createElement("td");
+                let value = item[col.key];
+                if(col.render) {
+                    td.innerHTML = col.render(value, item);
+                } else {
+                    td.textContent = value ?? "—";
+                }
+                // 特殊高亮：有效期过期样式
+                if(col.key === "expiry_display" && item.status === "expired") {
+                    td.style.fontWeight = "bold";
+                    td.style.color = "#dc2626";
+                }
+                row.appendChild(td);
+            });
+            tbody.appendChild(row);
+        });
+    }
+
+    function sortData() {
+        currentData.sort((a,b) => {
+            let aVal = a[sortColumn];
+            let bVal = b[sortColumn];
+            if(sortColumn === "base" || sortColumn === "quantity") {
+                aVal = Number(aVal) || 0;
+                bVal = Number(bVal) || 0;
+            } else if(sortColumn === "expiry_display") {
+                // 按原始日期排序（若有expiry_date则优先）
+                const aDate = a.expiry_date ? new Date(a.expiry_date) : null;
+                const bDate = b.expiry_date ? new Date(b.expiry_date) : null;
+                if(aDate && bDate) return sortAsc ? aDate - bDate : bDate - aDate;
+                if(aDate && !bDate) return sortAsc ? -1 : 1;
+                if(!aDate && bDate) return sortAsc ? 1 : -1;
+                return sortAsc ? String(a.expiry_display).localeCompare(b.expiry_display) : String(b.expiry_display).localeCompare(a.expiry_display);
+            } else if(sortColumn === "status") {
+                const order = {"expired":1, "near":2, "valid":3, "perpetual":4};
+                aVal = order[a.status] || 99;
+                bVal = order[b.status] || 99;
+            }
+            if(aVal < bVal) return sortAsc ? -1 : 1;
+            if(aVal > bVal) return sortAsc ? 1 : -1;
+            return 0;
+        });
+    }
+
+    function applyFilters() {
+        const searchTerm = document.getElementById("searchInput").value.trim().toLowerCase();
+        const highRiskVal = document.getElementById("highRiskFilter").value;
+        const statusVal = document.getElementById("statusFilter").value;
+        const shortageVal = document.getElementById("shortageFilter").value;
+
+        currentData = medicines.filter(item => {
+            // 搜索匹配：名称/规格/备注
+            let matchSearch = true;
+            if(searchTerm) {
+                matchSearch = item.name.toLowerCase().includes(searchTerm) ||
+                              (item.spec && item.spec.toLowerCase().includes(searchTerm)) ||
+                              (item.remark && item.remark.toLowerCase().includes(searchTerm));
+            }
+            // 高危筛选
+            let matchHigh = true;
+            if(highRiskVal === "high") matchHigh = item.high_risk && item.high_risk !== "" && item.high_risk !== "否";
+            if(highRiskVal === "normal") matchHigh = !item.high_risk || item.high_risk === "" || item.high_risk === "否";
+            // 效期筛选
+            let matchStatus = true;
+            if(statusVal) matchStatus = item.status === statusVal;
+            // 短缺筛选
+            let matchShortage = true;
+            if(shortageVal === "shortage") matchShortage = item.shortage === true;
+            if(shortageVal === "sufficient") matchShortage = item.shortage === false;
+
+            return matchSearch && matchHigh && matchStatus && matchShortage;
+        });
+        sortData();
+        renderTable();
+        updateStats();
+    }
+
+    function updateStats() {
+        // 更新统计数字（动态显示当前筛选后的数量）
+        const totalSpan = document.querySelector(".stats .stat-card:first-child .stat-number");
+        if(totalSpan) totalSpan.innerText = currentData.length;
+        const nearCount = currentData.filter(i => i.status === "near").length;
+        const expiredCount = currentData.filter(i => i.status === "expired").length;
+        const shortageCount = currentData.filter(i => i.shortage).length;
+        const highCount = currentData.filter(i => i.high_risk && i.high_risk !== "" && i.high_risk !== "否").length;
+        const statCards = document.querySelectorAll(".stats .stat-card");
+        if(statCards[1]) statCards[1].querySelector(".stat-number").innerText = highCount;
+        if(statCards[2]) statCards[2].querySelector(".stat-number").innerText = nearCount;
+        if(statCards[3]) statCards[3].querySelector(".stat-number").innerText = expiredCount;
+        if(statCards[4]) statCards[4].querySelector(".stat-number").innerText = shortageCount;
+    }
+
+    function buildHeader() {
+        const thead = document.getElementById("tableHeader");
+        const tr = document.createElement("tr");
+        columns.forEach(col => {
+            const th = document.createElement("th");
+            th.textContent = col.label;
+            if(col.sortable) {
+                th.style.cursor = "pointer";
+                th.addEventListener("click", () => {
+                    if(sortColumn === col.key) {
+                        sortAsc = !sortAsc;
+                    } else {
+                        sortColumn = col.key;
+                        sortAsc = true;
+                    }
+                    sortData();
+                    renderTable();
+                    updateSortIcons();
+                });
+                // 存储排序标记
+                th.setAttribute("data-col", col.key);
+            }
+            tr.appendChild(th);
+        });
+        thead.innerHTML = "";
+        thead.appendChild(tr);
+        updateSortIcons();
+    }
+
+    function updateSortIcons() {
+        const ths = document.querySelectorAll("#tableHeader th");
+        ths.forEach(th => {
+            const colKey = th.getAttribute("data-col");
+            if(colKey === sortColumn) {
+                let existing = th.querySelector(".sort-icon");
+                if(!existing) {
+                    existing = document.createElement("span");
+                    existing.className = "sort-icon";
+                    th.appendChild(existing);
+                }
+                existing.textContent = sortAsc ? " ▲" : " ▼";
+            } else {
+                const icon = th.querySelector(".sort-icon");
+                if(icon) icon.remove();
+            }
+        });
+    }
+
+    function resetFilters() {
+        document.getElementById("searchInput").value = "";
+        document.getElementById("highRiskFilter").value = "";
+        document.getElementById("statusFilter").value = "";
+        document.getElementById("shortageFilter").value = "";
+        applyFilters();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        buildHeader();
+        applyFilters();
+        document.getElementById("searchInput").addEventListener("input", applyFilters);
+        document.getElementById("highRiskFilter").addEventListener("change", applyFilters);
+        document.getElementById("statusFilter").addEventListener("change", applyFilters);
+        document.getElementById("shortageFilter").addEventListener("change", applyFilters);
+        document.getElementById("resetBtn").addEventListener("click", resetFilters);
+    });
+</script>
+</body>
+</html>
